@@ -23,9 +23,12 @@ public class AuthController : ControllerBase
     {
         try
         {
+            _logger.LogInformation("Login request received for username: {Username}", request.Username);
+
             var (success, token) = await _authService.LoginAsync(request.Username, request.Password);
             if (!success)
             {
+                _logger.LogWarning("Login failed for username: {Username}", request.Username);
                 return Unauthorized(new { message = "Invalid username or password" });
             }
 
@@ -33,16 +36,19 @@ public class AuthController : ControllerBase
             var user = await _authService.GetUserByUsernameAsync(request.Username);
             if (user == null)
             {
+                _logger.LogError("User not found after successful login: {Username}", request.Username);
                 return Unauthorized(new { message = "Invalid username or password" });
             }
+
+            _logger.LogInformation("Login successful for user: {Username}", request.Username);
 
             var response = new LoginResponse
             {
                 Token = token,
                 Username = user.Username,
                 Email = user.Email,
-                Role = user.Role?.Name ?? "User",
-                ExpirationDate = DateTime.UtcNow.AddMinutes(60) // or use config if available
+                RoleName = user.Role?.Name ?? "User",
+                ExpirationDate = DateTime.UtcNow.AddMinutes(60)
             };
 
             return Ok(response);

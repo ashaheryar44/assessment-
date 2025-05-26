@@ -94,3 +94,12 @@ bower_components/
 dist/
 build/
 out/
+
+
+# Ignore all environment and secret config files
+.env
+*.env
+*.env.*
+appsettings.*.json
+!appsettings.json
+!appsettings.Example.json

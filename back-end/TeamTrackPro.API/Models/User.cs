@@ -3,38 +3,34 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TeamTrackPro.API.Models;
 
-public class User
+public class User : BaseEntity
 {
-    [Key]
-    public int Id { get; set; }
-    
     [Required]
-    [MaxLength(50)]
+    [StringLength(50)]
     public required string Username { get; set; }
     
     [Required]
+    [StringLength(100)]
     [EmailAddress]
-    [MaxLength(100)]
     public required string Email { get; set; }
     
     [Required]
-    [MaxLength(100)]
     public required string PasswordHash { get; set; }
     
     [Required]
-    [MaxLength(50)]
+    [StringLength(50)]
     public required string FirstName { get; set; }
     
     [Required]
-    [MaxLength(50)]
+    [StringLength(50)]
     public required string LastName { get; set; }
     
     public int RoleId { get; set; }
-    public Role Role { get; set; }
     
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    [ForeignKey("RoleId")]
+    public Role? Role { get; set; }
+    
     public DateTime? LastLoginAt { get; set; }
-    public bool IsActive { get; set; } = true;
 
     public ICollection<Ticket> AssignedTickets { get; set; } = new List<Ticket>();
     public ICollection<TicketComment> Comments { get; set; } = new List<TicketComment>();

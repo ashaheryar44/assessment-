@@ -1,5 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using TeamTrackPro.API.Models;
+using TeamTrackPro.API.Data.Configurations;
+using TeamTrackPro.API.Data.Seed;
 
 namespace TeamTrackPro.API.Data;
 
@@ -16,9 +19,26 @@ public class AppDbContext : DbContext
     public DbSet<TicketComment> TicketComments { get; set; }
     public DbSet<ActivityLog> ActivityLogs { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.ConfigureWarnings(warnings =>
+            warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Apply configurations
+        modelBuilder.ApplyConfiguration(new UserConfiguration());
+        modelBuilder.ApplyConfiguration(new RoleConfiguration());
+        modelBuilder.ApplyConfiguration(new ProjectConfiguration());
+        modelBuilder.ApplyConfiguration(new TicketConfiguration());
+        modelBuilder.ApplyConfiguration(new ActivityLogConfiguration());
+
+        // Apply seeders
+        new RoleSeeder(modelBuilder).Seed();
+        new UserSeeder(modelBuilder).Seed();
 
         // Configure User-Role relationship
         modelBuilder.Entity<User>()
