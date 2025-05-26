@@ -3,30 +3,28 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TeamTrackPro.API.Models;
 
-public class ActivityLog
+public class ActivityLog : BaseEntity
 {
     [Key]
     public int Id { get; set; }
     
     public int UserId { get; set; }
-    [Required]
-    public required User User { get; set; }
+    [ForeignKey("UserId")]
+    public User User { get; set; }
     
     [Required]
-    [MaxLength(50)]
+    [StringLength(50)]
     public required string Action { get; set; }
     
     [Required]
-    [MaxLength(200)]
-    public required string Description { get; set; }
+    [StringLength(500)]
+    public required string Details { get; set; }
     
     [Required]
     [MaxLength(50)]
     public required string EntityType { get; set; }
     
     public int? EntityId { get; set; }
-    
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
     [Required]
     [MaxLength(50)]

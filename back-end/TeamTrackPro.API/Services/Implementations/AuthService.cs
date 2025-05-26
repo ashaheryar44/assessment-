@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using TeamTrackPro.API.Data;
 using TeamTrackPro.API.Models;
 using TeamTrackPro.API.Services.Interfaces;
+using BCrypt.Net;
 
 namespace TeamTrackPro.API.Services.Implementations;
 
@@ -26,6 +27,8 @@ public class AuthService : IAuthService
     {
         try
         {
+            _logger.LogInformation("Login attempt for user: {Username}", username);
+
             var user = await _context.Users
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Username == username && u.IsActive);
@@ -36,17 +39,21 @@ public class AuthService : IAuthService
                 return (false, null);
             }
 
-            // TODO: Implement proper password hashing
-            if (user.PasswordHash != password)
+            _logger.LogInformation("User found, verifying password for: {Username}", username);
+            
+            if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
             {
                 _logger.LogWarning("Login attempt failed: Invalid password for user - {Username}", username);
                 return (false, null);
             }
 
+            _logger.LogInformation("Password verified successfully for user: {Username}", username);
+
             var token = GenerateJwtToken(user);
             user.LastLoginAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Login successful for user: {Username}", username);
             return (true, token);
         }
         catch (Exception ex)
