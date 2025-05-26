@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace TeamTrackPro.API.Models;
 
@@ -12,5 +13,6 @@ public class Role : BaseEntity
     [StringLength(200)]
     public string Description { get; set; }
     
+    [JsonIgnore]
     public ICollection<User> Users { get; set; } = new List<User>();
 } 

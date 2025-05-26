@@ -1,0 +1,44 @@
+# Build results
+bin/
+obj/
+logs/
+bld/
+x64/
+x86/
+ARM/
+ARM64/
+
+# .NET Core
+artifacts/
+project.lock.json
+project.fragment.lock.json
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Environment and configuration
+appsettings.*.json
+!appsettings.json
+!appsettings.Example.json
+
+# NuGet
+*.nupkg
+*.snupkg
+
+# Test results
+TestResult*/
+BuildLog.*
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+CodeCoverage/
+
+# MSBuild logs
+*.binlog
