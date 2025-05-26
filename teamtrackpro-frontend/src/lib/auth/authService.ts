@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
 export interface LoginRequest {
   username: string;
@@ -29,7 +29,9 @@ class AuthService {
   private token: string | null = null;
 
   constructor() {
-    this.token = localStorage.getItem('token');
+    if (typeof window !== 'undefined') {
+      this.token = localStorage.getItem('token');
+    }
   }
 
   async login(data: LoginRequest): Promise<AuthResponse> {
@@ -51,14 +53,18 @@ class AuthService {
   }
 
   logout(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
     this.token = null;
   }
 
   private setToken(token: string): void {
     this.token = token;
-    localStorage.setItem('token', token);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('token', token);
+    }
   }
 
   getToken(): string | null {

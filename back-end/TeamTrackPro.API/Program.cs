@@ -11,6 +11,7 @@ using TeamTrackPro.API.Services;
 using TeamTrackPro.API.Services.Interfaces;
 using TeamTrackPro.API.Services.Implementations;
 using System.Globalization;
+using System.Text.Json.Serialization;
 
 // Set the default culture
 CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
@@ -19,7 +20,12 @@ CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-US");
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()

@@ -16,7 +16,7 @@ This is the frontend application for TeamTrackPro, built with Next.js and Materi
 
 2. Create a `.env.local` file in the root directory with the following content:
    ```
-   NEXT_PUBLIC_API_URL=http://localhost:5000/api
+   NEXT_PUBLIC_API_URL=http://localhost:5001/api
    ```
 
 ## Development

@@ -9,9 +9,11 @@ export const useAuth = () => {
   const [user, setUser] = useState<AuthResponse | null>(null);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    if (typeof window !== 'undefined') {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
     }
   }, []);
 
@@ -21,7 +23,9 @@ export const useAuth = () => {
       setError(null);
       const response = await authService.login(data);
       setUser(response);
-      localStorage.setItem('user', JSON.stringify(response));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user', JSON.stringify(response));
+      }
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'An error occurred during login');
