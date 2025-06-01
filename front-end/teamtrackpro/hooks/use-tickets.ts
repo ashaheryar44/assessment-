@@ -2,51 +2,71 @@
 
 import { useState, useEffect } from "react"
 import type { Ticket } from "@/types"
-import { mockTickets } from "@/data/mock-data"
+import { ticketsApi } from "@/lib/api"
 
 export function useTickets() {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setTickets(mockTickets)
-      setLoading(false)
-    }, 500)
+    fetchTickets()
   }, [])
 
-  const createTicket = (ticket: Omit<Ticket, "id" | "createdAt" | "comments">) => {
-    const newTicket: Ticket = {
-      ...ticket,
-      id: Date.now().toString(),
-      comments: [],
-      createdAt: new Date().toISOString(),
+  const fetchTickets = async () => {
+    try {
+      setLoading(true)
+      const response = await ticketsApi.getAll()
+      setTickets(response.data)
+      setError(null)
+    } catch (err) {
+      setError("Failed to fetch tickets")
+      console.error("Error fetching tickets:", err)
+    } finally {
+      setLoading(false)
     }
-    setTickets((prev) => [...prev, newTicket])
-    return newTicket
   }
 
-  const updateTicket = (id: string, updates: Partial<Ticket>) => {
-    setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)))
+  const createTicket = async (ticket: Omit<Ticket, "id" | "createdAt" | "comments">) => {
+    try {
+      const response = await ticketsApi.create(ticket)
+      setTickets((prev) => [...prev, response.data])
+      return response.data
+    } catch (err) {
+      setError("Failed to create ticket")
+      throw err
+    }
   }
 
-  const addComment = (ticketId: string, comment: string, userId: string) => {
-    const newComment = {
-      id: Date.now().toString(),
-      text: comment,
-      userId,
-      createdAt: new Date().toISOString(),
+  const updateTicket = async (id: string, updates: Partial<Ticket>) => {
+    try {
+      const response = await ticketsApi.update(id, updates)
+      setTickets((prev) => prev.map((t) => (t.id === id ? response.data : t)))
+      return response.data
+    } catch (err) {
+      setError("Failed to update ticket")
+      throw err
     }
+  }
 
-    setTickets((prev) => prev.map((t) => (t.id === ticketId ? { ...t, comments: [...t.comments, newComment] } : t)))
+  const addComment = async (ticketId: string, comment: string) => {
+    try {
+      const response = await ticketsApi.addComment(ticketId, comment)
+      setTickets((prev) => prev.map((t) => (t.id === ticketId ? response.data : t)))
+      return response.data
+    } catch (err) {
+      setError("Failed to add comment")
+      throw err
+    }
   }
 
   return {
     tickets,
     loading,
+    error,
     createTicket,
     updateTicket,
     addComment,
+    refreshTickets: fetchTickets,
   }
 }
