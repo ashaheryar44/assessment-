@@ -2,38 +2,59 @@
 
 import { useState, useEffect } from "react"
 import type { Project } from "@/types"
-import { mockProjects } from "@/data/mock-data"
+import { projectsApi } from "@/lib/api"
 
 export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setProjects(mockProjects)
-      setLoading(false)
-    }, 500)
+    fetchProjects()
   }, [])
 
-  const createProject = (project: Omit<Project, "id" | "createdAt">) => {
-    const newProject: Project = {
-      ...project,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
+  const fetchProjects = async () => {
+    try {
+      setLoading(true)
+      const response = await projectsApi.getAll()
+      setProjects(response.data)
+      setError(null)
+    } catch (err) {
+      setError("Failed to fetch projects")
+      console.error("Error fetching projects:", err)
+    } finally {
+      setLoading(false)
     }
-    setProjects((prev) => [...prev, newProject])
-    return newProject
   }
 
-  const updateProject = (id: string, updates: Partial<Project>) => {
-    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)))
+  const createProject = async (project: Omit<Project, "id" | "createdAt">) => {
+    try {
+      const response = await projectsApi.create(project)
+      setProjects((prev) => [...prev, response.data])
+      return response.data
+    } catch (err) {
+      setError("Failed to create project")
+      throw err
+    }
+  }
+
+  const updateProject = async (id: string, updates: Partial<Project>) => {
+    try {
+      const response = await projectsApi.update(id, updates)
+      setProjects((prev) => prev.map((p) => (p.id === id ? response.data : p)))
+      return response.data
+    } catch (err) {
+      setError("Failed to update project")
+      throw err
+    }
   }
 
   return {
     projects,
     loading,
+    error,
     createProject,
     updateProject,
+    refreshProjects: fetchProjects,
   }
 }

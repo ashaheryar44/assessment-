@@ -1,25 +1,30 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Container, Paper, TextField, Button, Typography, Box, Alert, Link } from "@mui/material"
 import { ArrowBack } from "@mui/icons-material"
+import { authApi } from "@/lib/api"
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("")
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError(null)
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await authApi.resetPassword(email)
       setSuccess(true)
+    } catch (err) {
+      setError("Failed to send reset instructions. Please check your email address.")
+    } finally {
       setLoading(false)
-    }, 2000)
+    }
   }
 
   if (success) {
@@ -69,6 +74,12 @@ export default function ResetPasswordPage() {
           <Typography variant="body1" align="center" color="text.secondary" gutterBottom>
             Enter your email address and we'll send you instructions to reset your password.
           </Typography>
+
+          {error && (
+            <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
+              {error}
+            </Alert>
+          )}
 
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
             <TextField

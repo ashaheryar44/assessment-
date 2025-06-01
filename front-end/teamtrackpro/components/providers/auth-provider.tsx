@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import type { User } from "@/types"
-import { mockUsers } from "@/data/mock-data"
+import { authApi } from "@/lib/api"
 
 interface AuthContextType {
   user: User | null
@@ -20,28 +20,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Check for stored user session
     const storedUser = localStorage.getItem("user")
-    if (storedUser) {
+    const token = localStorage.getItem("token")
+    if (storedUser && token) {
       setUser(JSON.parse(storedUser))
     }
     setLoading(false)
   }, [])
 
   const login = async (username: string, password: string): Promise<User | null> => {
-    // Simulate API call
-    const foundUser = mockUsers.find((u) => u.username === username && u.password === password)
-
-    if (foundUser) {
-      const { password: _, ...userWithoutPassword } = foundUser
-      setUser(userWithoutPassword as User)
-      localStorage.setItem("user", JSON.stringify(userWithoutPassword))
-      return userWithoutPassword as User
+    try {
+      const response = await authApi.login(username, password)
+      const { token, ...userData } = response.data
+      
+      // Store token and user data
+      localStorage.setItem("token", token)
+      localStorage.setItem("user", JSON.stringify(userData))
+      
+      setUser(userData)
+      return userData
+    } catch (error) {
+      throw new Error("Invalid credentials")
     }
-
-    throw new Error("Invalid credentials")
   }
 
   const logout = () => {
     setUser(null)
+    localStorage.removeItem("token")
     localStorage.removeItem("user")
   }
 
