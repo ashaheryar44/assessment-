@@ -19,6 +19,7 @@ public class ProjectService : IProjectService
     public async Task<IEnumerable<Project>> GetAllProjectsAsync()
     {
         return await _context.Projects
+            .Include(p => p.Manager)
             .Include(p => p.Tickets)
             .ToListAsync();
     }
@@ -26,6 +27,7 @@ public class ProjectService : IProjectService
     public async Task<Project> GetProjectByIdAsync(int id)
     {
         return await _context.Projects
+            .Include(p => p.Manager)
             .Include(p => p.Tickets)
             .FirstOrDefaultAsync(p => p.Id == id);
     }

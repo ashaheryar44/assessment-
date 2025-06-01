@@ -65,6 +65,8 @@ public class ProjectService : IProjectService
     {
         try
         {
+            _logger.LogInformation("Creating project: {@Project}", project);
+            
             project.CreatedAt = DateTime.UtcNow;
             project.IsActive = true;
             project.Status = ProjectStatus.NotStarted;
@@ -72,11 +74,16 @@ public class ProjectService : IProjectService
             _context.Projects.Add(project);
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Project created successfully with ID: {ProjectId}", project.Id);
             return project;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating project {ProjectName}", project.Name);
+            _logger.LogError(ex, "Error creating project {ProjectName}. Details: {Message}", project.Name, ex.Message);
+            if (ex.InnerException != null)
+            {
+                _logger.LogError("Inner exception: {Message}", ex.InnerException.Message);
+            }
             return null;
         }
     }

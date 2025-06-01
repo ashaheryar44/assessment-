@@ -16,4 +16,7 @@ public class CreateProjectRequest
     public DateTime StartDate { get; set; }
     
     public DateTime? EndDate { get; set; }
+
+    [Required]
+    public int ManagerId { get; set; }
 } 

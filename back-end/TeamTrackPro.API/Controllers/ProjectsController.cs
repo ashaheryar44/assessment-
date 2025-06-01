@@ -73,6 +73,7 @@ public class ProjectsController : ControllerBase
                 Description = request.Description,
                 StartDate = request.StartDate,
                 EndDate = request.EndDate,
+                ManagerId = request.ManagerId,
                 Status = ProjectStatus.NotStarted
             };
 
