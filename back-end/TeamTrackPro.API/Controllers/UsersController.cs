@@ -7,43 +7,81 @@ using TeamTrackPro.API.Services.Interfaces;
 
 namespace TeamTrackPro.API.Controllers;
 
-[Authorize]
+/// <summary>
+/// Controller for managing users, including CRUD operations and user-specific actions.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
     private readonly ILogger<UsersController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the UsersController.
+    /// </summary>
+    /// <param name="userService">The user service for handling user operations.</param>
+    /// <param name="logger">The logger for recording user-related events.</param>
     public UsersController(IUserService userService, ILogger<UsersController> logger)
     {
         _userService = userService;
         _logger = logger;
     }
 
-    [Authorize(Roles = RoleConstants.Admin)]
+    /// <summary>
+    /// Retrieves a list of all users.
+    /// </summary>
+    /// <returns>
+    /// - 200 OK with list of users
+    /// - 401 Unauthorized if user is not authenticated
+    /// - 403 Forbidden if user does not have permission to view users
+    /// - 500 Internal Server Error if an unexpected error occurs
+    /// </returns>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<User>>> GetAllUsers()
+    [Authorize(Roles = "Admin,Manager")]
+    [ProducesResponseType(typeof(IEnumerable<UserDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
     {
         try
         {
-            var users = await _userService.GetAllUsersAsync();
+            var users = await _userService.GetUsersAsync();
             return Ok(users);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting all users");
+            _logger.LogError(ex, "Error retrieving users");
             return StatusCode(500, new { message = "An error occurred while retrieving users" });
         }
     }
 
-    [Authorize(Roles = RoleConstants.Admin)]
+    /// <summary>
+    /// Retrieves a specific user by their ID.
+    /// </summary>
+    /// <param name="id">The ID of the user to retrieve.</param>
+    /// <returns>
+    /// - 200 OK with user details
+    /// - 401 Unauthorized if user is not authenticated
+    /// - 403 Forbidden if user does not have permission to view the user
+    /// - 404 Not Found if user does not exist
+    /// - 500 Internal Server Error if an unexpected error occurs
+    /// </returns>
     [HttpGet("{id}")]
-    public async Task<ActionResult<User>> GetUserById(int id)
+    [Authorize(Roles = "Admin,Manager")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<UserDto>> GetUser(int id)
     {
         try
         {
             var user = await _userService.GetUserByIdAsync(id);
+            
             if (user == null)
             {
                 return NotFound(new { message = "User not found" });
@@ -53,60 +91,76 @@ public class UsersController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting user {UserId}", id);
+            _logger.LogError(ex, "Error retrieving user {UserId}", id);
             return StatusCode(500, new { message = "An error occurred while retrieving the user" });
         }
     }
 
-    [Authorize(Roles = RoleConstants.Admin)]
+    /// <summary>
+    /// Creates a new user.
+    /// </summary>
+    /// <param name="request">The user creation request containing user details.</param>
+    /// <returns>
+    /// - 201 Created with the created user details
+    /// - 400 Bad Request if the request is invalid
+    /// - 401 Unauthorized if user is not authenticated
+    /// - 403 Forbidden if user does not have permission to create users
+    /// - 500 Internal Server Error if an unexpected error occurs
+    /// </returns>
     [HttpPost]
-    public async Task<ActionResult<User>> CreateUser([FromBody] CreateUserRequest request)
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<UserDto>> CreateUser([FromBody] CreateUserRequest request)
     {
         try
         {
-            var user = new User
-            {
-                Username = request.Username,
-                Email = request.Email,
-                PasswordHash = request.Password, // TODO: Implement proper password hashing
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                RoleId = request.RoleId
-            };
-
-            var createdUser = await _userService.CreateUserAsync(user);
-            if (createdUser == null)
-            {
-                return BadRequest(new { message = "Failed to create user" });
-            }
-
-            return CreatedAtAction(nameof(GetUserById), new { id = createdUser.Id }, createdUser);
+            var user = await _userService.CreateUserAsync(request);
+            return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating user {Username}", request.Username);
+            _logger.LogError(ex, "Error creating user");
             return StatusCode(500, new { message = "An error occurred while creating the user" });
         }
     }
 
-    [Authorize(Roles = RoleConstants.Admin)]
+    /// <summary>
+    /// Updates an existing user.
+    /// </summary>
+    /// <param name="id">The ID of the user to update.</param>
+    /// <param name="request">The user update request containing updated user details.</param>
+    /// <returns>
+    /// - 200 OK with updated user details
+    /// - 400 Bad Request if the request is invalid
+    /// - 401 Unauthorized if user is not authenticated
+    /// - 403 Forbidden if user does not have permission to update the user
+    /// - 404 Not Found if user does not exist
+    /// - 500 Internal Server Error if an unexpected error occurs
+    /// </returns>
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser(int id, [FromBody] User user)
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<UserDto>> UpdateUser(int id, [FromBody] UpdateUserRequest request)
     {
         try
         {
-            if (id != user.Id)
-            {
-                return BadRequest(new { message = "User ID mismatch" });
-            }
-
-            var success = await _userService.UpdateUserAsync(user);
-            if (!success)
+            var user = await _userService.UpdateUserAsync(id, request);
+            
+            if (user == null)
             {
                 return NotFound(new { message = "User not found" });
             }
 
-            return Ok(new { message = "User updated successfully" });
+            return Ok(user);
         }
         catch (Exception ex)
         {
@@ -115,19 +169,36 @@ public class UsersController : ControllerBase
         }
     }
 
-    [Authorize(Roles = RoleConstants.Admin)]
+    /// <summary>
+    /// Deletes a user.
+    /// </summary>
+    /// <param name="id">The ID of the user to delete.</param>
+    /// <returns>
+    /// - 204 No Content if user is deleted successfully
+    /// - 401 Unauthorized if user is not authenticated
+    /// - 403 Forbidden if user does not have permission to delete users
+    /// - 404 Not Found if user does not exist
+    /// - 500 Internal Server Error if an unexpected error occurs
+    /// </returns>
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DeleteUser(int id)
     {
         try
         {
             var success = await _userService.DeleteUserAsync(id);
+            
             if (!success)
             {
                 return NotFound(new { message = "User not found" });
             }
 
-            return Ok(new { message = "User deleted successfully" });
+            return NoContent();
         }
         catch (Exception ex)
         {
@@ -136,45 +207,113 @@ public class UsersController : ControllerBase
         }
     }
 
-    [Authorize(Roles = RoleConstants.Admin)]
-    [HttpPost("{id}/deactivate")]
-    public async Task<IActionResult> DeactivateUser(int id)
+    /// <summary>
+    /// Updates a user's role.
+    /// </summary>
+    /// <param name="id">The ID of the user.</param>
+    /// <param name="roleId">The ID of the new role.</param>
+    /// <returns>
+    /// - 200 OK if role is updated successfully
+    /// - 400 Bad Request if the role is invalid
+    /// - 401 Unauthorized if user is not authenticated
+    /// - 403 Forbidden if user does not have permission to update roles
+    /// - 404 Not Found if user or role does not exist
+    /// - 500 Internal Server Error if an unexpected error occurs
+    /// </returns>
+    [HttpPut("{id}/role")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> UpdateUserRole(int id, [FromBody] int roleId)
     {
         try
         {
-            var success = await _userService.DeactivateUserAsync(id);
+            var success = await _userService.UpdateUserRoleAsync(id, roleId);
+            
             if (!success)
             {
-                return NotFound(new { message = "User not found" });
+                return NotFound(new { message = "User or role not found" });
             }
 
-            return Ok(new { message = "User deactivated successfully" });
+            return Ok(new { message = "User role updated successfully" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deactivating user {UserId}", id);
-            return StatusCode(500, new { message = "An error occurred while deactivating the user" });
+            _logger.LogError(ex, "Error updating role for user {UserId}", id);
+            return StatusCode(500, new { message = "An error occurred while updating user role" });
         }
     }
 
-    [Authorize(Roles = RoleConstants.Admin)]
-    [HttpPost("{id}/reactivate")]
-    public async Task<IActionResult> ReactivateUser(int id)
+    /// <summary>
+    /// Retrieves the current user's profile.
+    /// </summary>
+    /// <returns>
+    /// - 200 OK with user profile details
+    /// - 401 Unauthorized if user is not authenticated
+    /// - 500 Internal Server Error if an unexpected error occurs
+    /// </returns>
+    [HttpGet("profile")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<UserDto>> GetCurrentUserProfile()
     {
         try
         {
-            var success = await _userService.ReactivateUserAsync(id);
-            if (!success)
+            var userId = int.Parse(User.FindFirst("nameid")?.Value);
+            var user = await _userService.GetUserByIdAsync(userId);
+            
+            if (user == null)
             {
                 return NotFound(new { message = "User not found" });
             }
 
-            return Ok(new { message = "User reactivated successfully" });
+            return Ok(user);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error reactivating user {UserId}", id);
-            return StatusCode(500, new { message = "An error occurred while reactivating the user" });
+            _logger.LogError(ex, "Error retrieving current user profile");
+            return StatusCode(500, new { message = "An error occurred while retrieving user profile" });
+        }
+    }
+
+    /// <summary>
+    /// Updates the current user's profile.
+    /// </summary>
+    /// <param name="request">The profile update request containing updated user details.</param>
+    /// <returns>
+    /// - 200 OK with updated user details
+    /// - 400 Bad Request if the request is invalid
+    /// - 401 Unauthorized if user is not authenticated
+    /// - 500 Internal Server Error if an unexpected error occurs
+    /// </returns>
+    [HttpPut("profile")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<UserDto>> UpdateCurrentUserProfile([FromBody] UpdateUserProfileRequest request)
+    {
+        try
+        {
+            var userId = int.Parse(User.FindFirst("nameid")?.Value);
+            var user = await _userService.UpdateUserProfileAsync(userId, request);
+            
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+
+            return Ok(user);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating current user profile");
+            return StatusCode(500, new { message = "An error occurred while updating user profile" });
         }
     }
 } 

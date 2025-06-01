@@ -5,6 +5,9 @@ using TeamTrackPro.API.Services.Interfaces;
 
 namespace TeamTrackPro.API.Controllers;
 
+/// <summary>
+/// Controller for handling authentication-related operations such as login, password change, and password reset.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
@@ -12,13 +15,30 @@ public class AuthController : ControllerBase
     private readonly IAuthService _authService;
     private readonly ILogger<AuthController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the AuthController.
+    /// </summary>
+    /// <param name="authService">The authentication service for handling user authentication.</param>
+    /// <param name="logger">The logger for recording authentication events.</param>
     public AuthController(IAuthService authService, ILogger<AuthController> logger)
     {
         _authService = authService;
         _logger = logger;
     }
 
+    /// <summary>
+    /// Authenticates a user and returns a JWT token upon successful login.
+    /// </summary>
+    /// <param name="request">The login request containing username and password.</param>
+    /// <returns>
+    /// - 200 OK with JWT token and user details if login is successful
+    /// - 401 Unauthorized if credentials are invalid
+    /// - 500 Internal Server Error if an unexpected error occurs
+    /// </returns>
     [HttpPost("login")]
+    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
     {
         try
@@ -60,8 +80,22 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Changes the password for the currently authenticated user.
+    /// </summary>
+    /// <param name="request">The password change request containing current and new passwords.</param>
+    /// <returns>
+    /// - 200 OK if password is changed successfully
+    /// - 400 Bad Request if current password is invalid
+    /// - 401 Unauthorized if user is not authenticated
+    /// - 500 Internal Server Error if an unexpected error occurs
+    /// </returns>
     [Authorize]
     [HttpPost("change-password")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
         try
@@ -83,7 +117,19 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Initiates the password reset process for a user by sending reset instructions to their email.
+    /// </summary>
+    /// <param name="request">The password reset request containing the user's email address.</param>
+    /// <returns>
+    /// - 200 OK if reset instructions are sent successfully
+    /// - 400 Bad Request if email is not found
+    /// - 500 Internal Server Error if an unexpected error occurs
+    /// </returns>
     [HttpPost("reset-password")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
     {
         try
@@ -104,13 +150,29 @@ public class AuthController : ControllerBase
     }
 }
 
+/// <summary>
+/// Request model for changing a user's password.
+/// </summary>
 public class ChangePasswordRequest
 {
+    /// <summary>
+    /// The user's current password.
+    /// </summary>
     public string CurrentPassword { get; set; }
+
+    /// <summary>
+    /// The new password to set.
+    /// </summary>
     public string NewPassword { get; set; }
 }
 
+/// <summary>
+/// Request model for resetting a user's password.
+/// </summary>
 public class ResetPasswordRequest
 {
+    /// <summary>
+    /// The email address of the user requesting a password reset.
+    /// </summary>
     public string Email { get; set; }
 } 
